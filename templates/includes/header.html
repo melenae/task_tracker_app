@@ -1,0 +1,160 @@
+<div class="app-header">
+    <div class="app-header__logo">task-track</div>
+    <nav class="app-header__nav">
+        <div class="nav-item">
+            <button type="button" class="nav-trigger" data-dropdown="service-desk">Service desk</button>
+            <div class="nav-dropdown" id="dropdown-service-desk">
+                <a href="{% url 'companies' %}" class="nav-link">Companies</a>
+                <a href="{% url 'databases' %}" class="nav-link">DataBases</a>
+                <a href="{% url 'services' %}" class="nav-link">Services</a>
+                <a href="{% url 'issues' %}" class="nav-link">Issues</a>
+            </div>
+        </div>
+        <div class="nav-item">
+            <button type="button" class="nav-trigger" data-dropdown="profile">Управление профилем</button>
+            <div class="nav-dropdown" id="dropdown-profile">
+                <a href="{% url 'accounts' %}" class="nav-link">Аккаунты</a>
+                <a href="{% url 'projects' %}" class="nav-link">Проекты</a>
+                <a href="{% url 'users' %}" class="nav-link">Пользователи</a>
+            </div>
+        </div>
+    </nav>
+    <div class="app-header__actions">
+        {% if request.user.is_authenticated %}
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+        {% else %}
+        <a href="{% url 'login' %}" class="logout-btn">Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.app-header {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.app-header__logo {
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #1976d2;
+    letter-spacing: 1px;
+}
+.app-header__nav {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.nav-item {
+    position: relative;
+}
+.nav-trigger {
+    background: #e3f2fd;
+    border: none;
+    color: #1565c0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.nav-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    padding: 10px;
+    min-width: 180px;
+    z-index: 50;
+}
+.nav-dropdown.active {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.nav-link {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: #37474f;
+    text-decoration: none;
+    cursor: pointer;
+}
+.nav-link:hover:not([disabled]) {
+    background: #f1f5f9;
+}
+.nav-link[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+.app-header__actions form {
+    margin: 0;
+}
+.logout-btn {
+    background: #ef5350;
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.logout-btn:hover {
+    background: #d32f2f;
+}
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .nav-dropdown {
+        position: static;
+        box-shadow: none;
+        background: #f8fafc;
+        margin-top: 8px;
+    }
+}
+</style>
+
+<script>
+(function() {
+    const triggers = document.querySelectorAll('.nav-trigger');
+    function closeAll(exceptId) {
+        document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+            if (dropdown.id !== exceptId) {
+                dropdown.classList.remove('active');
+            }
+        });
+    }
+    triggers.forEach(trigger => {
+        trigger.addEventListener('click', () => {
+            const targetId = `dropdown-${trigger.dataset.dropdown}`;
+            const dropdown = document.getElementById(targetId);
+            if (!dropdown) return;
+            const isActive = dropdown.classList.contains('active');
+            closeAll(targetId);
+            dropdown.classList.toggle('active', !isActive);
+        });
+    });
+    document.addEventListener('click', (event) => {
+        if (!event.target.closest('.nav-item')) {
+            closeAll();
+        }
+    });
+})();
+</script>
+

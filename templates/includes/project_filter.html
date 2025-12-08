@@ -1,0 +1,77 @@
+<div class="project-filter">
+    <form method="get" class="filter-form" id="project-filter-form">
+        <label for="project-filter">Фильтр по проекту:</label>
+        <select name="project" id="project-filter" class="filter-select" onchange="this.form.submit()">
+            <option value="">Все проекты</option>
+            {% for proj in all_projects %}
+                <option value="{{ proj.id }}" {% if selected_project_id == proj.id %}selected{% endif %}>
+                    {{ proj.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<script>
+// Сохраняем параметр фильтра при отправке POST-форм
+document.addEventListener('DOMContentLoaded', function() {
+    const projectFilter = document.getElementById('project-filter');
+    const hiddenProjectInput = document.getElementById('hidden-project-filter');
+    const createForms = document.querySelectorAll('form[method="post"]');
+    
+    if (projectFilter && createForms.length > 0) {
+        const selectedProjectId = projectFilter.value;
+        if (selectedProjectId) {
+            createForms.forEach(form => {
+                // Добавляем скрытое поле с параметром проекта в POST-формы
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'filter_project';
+                hiddenInput.value = selectedProjectId;
+                form.appendChild(hiddenInput);
+            });
+        }
+    }
+});
+</script>
+
+<style>
+.project-filter {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
+}
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.filter-form label {
+    font-weight: 600;
+    color: #37474f;
+    margin: 0;
+    white-space: nowrap;
+}
+.filter-select {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cfd8dc;
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+}
+.filter-select:hover {
+    border-color: #90a4ae;
+}
+.filter-select:focus {
+    outline: none;
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+</style>
+

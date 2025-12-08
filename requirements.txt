@@ -1,0 +1,5 @@
+Django>=5.2.8
+psycopg2-binary>=2.9.9
+python-decouple>=3.8
+django-redis>=5.4.0
+kafka-python>=2.0.2

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявки</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 10px; }
+        .container { max-width: 100%; margin: 0; width: 100%; padding: 0; }
+        .container-header { max-width: 100%; margin: 0 auto 20px; padding: 0 10px; }
+        h1 { margin-bottom: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #eceff1; }
+        th { text-align: left; padding: 12px; font-weight: 600; }
+        td { padding: 12px; border-top: 1px solid #e0e0e0; }
+        tbody tr:hover { background: #f5f5f5; cursor: pointer; }
+        .btn-add { background: #4caf50; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+        .btn-add:hover { background: #43a047; }
+        .empty { background: #fff; padding: 16px; border-radius: 8px; text-align: center; color: #607d8b; }
+        .messages { margin-bottom: 20px; }
+        .message { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+        .status-badge { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+        .status-new { background: #e3f2fd; color: #1565c0; }
+        .status-in-progress { background: #fff3cd; color: #f57c00; }
+        .status-waiting { background: #fce4ec; color: #c2185b; }
+        .status-testing { background: #e8f5e9; color: #2e7d32; }
+        .status-done { background: #c8e6c9; color: #256029; }
+        .status-closed { background: #cfd8dc; color: #455a64; }
+        .view-toggle { display: flex; gap: 8px; background: #fff; padding: 4px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .view-btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; color: #546e7a; font-weight: 500; transition: all 0.2s; }
+        .view-btn:hover { background: #f5f5f5; color: #37474f; }
+        .view-btn.active { background: #1976d2; color: #fff; }
+        .kanban-board { display: flex; gap: 10px; overflow-x: auto; padding: 0 10px 16px; min-height: 400px; width: 100%; box-sizing: border-box; }
+        .kanban-column { flex: 1 1 0; min-width: 220px; background: #f5f5f5; border-radius: 12px; padding: 12px; }
+        .kanban-column-header { font-weight: 600; font-size: 14px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; color: #37474f; }
+        .kanban-column-count { background: #e0e0e0; color: #546e7a; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .kanban-card { background: #fff; border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: move; transition: transform 0.2s, box-shadow 0.2s; border-left: 3px solid #1976d2; }
+        .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .kanban-card.dragging { opacity: 0.5; transform: rotate(2deg); }
+        .kanban-column.drag-over { background: #e3f2fd; border: 2px dashed #1976d2; }
+        .kanban-column.drag-over .kanban-column-header { border-bottom-color: #1976d2; }
+        .kanban-card-title { font-weight: 600; margin-bottom: 8px; color: #37474f; font-size: 14px; line-height: 1.4; }
+        .kanban-card-meta { font-size: 12px; color: #78909c; margin-top: 6px; }
+        .kanban-card-company { font-size: 11px; color: #90a4ae; margin-top: 4px; font-weight: 500; }
+        /* Модальное окно для комментария */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 12px; padding: 24px; max-width: 500px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #37474f; }
+        .modal-form label { display: block; font-weight: 600; margin-bottom: 8px; color: #546e7a; font-size: 14px; }
+        .modal-form textarea { width: 100%; padding: 12px; border: 2px solid #cfd8dc; border-radius: 8px; font-size: 14px; font-family: Arial, sans-serif; resize: vertical; min-height: 100px; box-sizing: border-box; }
+        .modal-form textarea:focus { outline: none; border-color: #1976d2; }
+        .modal-form textarea.error { border-color: #b71c1c; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+        .modal-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .modal-btn-primary { background: #1976d2; color: #fff; }
+        .modal-btn-primary:hover { background: #1565c0; }
+        .modal-btn-secondary { background: #eceff1; color: #455a64; }
+        .modal-btn-secondary:hover { background: #cfd8dc; }
+        .modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .error-message { color: #b71c1c; font-size: 12px; margin-top: 4px; display: none; }
+        .error-message.show { display: block; }
+    </style>
+</head>
+<body>
+    {% include "includes/header.html" %}
+    <div class="container-header">
+        <h1>Заявки</h1>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% include "includes/project_filter.html" %}
+
+        <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <a href="{% url 'issue-create' %}" class="btn-add">Создать заявку</a>
+            <div class="view-toggle">
+                <a href="?view=table{% if selected_project_id %}&project={{ selected_project_id }}{% endif %}" 
+                   class="view-btn {% if view_mode == 'table' %}active{% endif %}">Таблица</a>
+                <a href="?view=kanban{% if selected_project_id %}&project={{ selected_project_id }}{% endif %}" 
+                   class="view-btn {% if view_mode == 'kanban' %}active{% endif %}">Канбан</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+
+        {% if view_mode == 'table' %}
+            {% if issues %}
+            <div class="card" style="max-width: 1200px; margin: 0 auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Компания</th>
+                            <th>База данных</th>
+                            <th>Услуга</th>
+                            <th>Пользователь</th>
+                            <th>Статус</th>
+                            <th>Дата создания</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                        <tr data-url="{% url 'issue-detail' issue.id %}">
+                            <td><strong>{{ issue.name }}</strong></td>
+                            <td>{{ issue.Companies.name|default:"—" }}</td>
+                            <td>{{ issue.DataBases.path|default:"—" }}</td>
+                            <td>{{ issue.Services.company.name|default:"—" }}</td>
+                            <td>{% if issue.users %}{{ issue.users.name|default:issue.users.email|default:"—" }}{% else %}—{% endif %}</td>
+                            <td>
+                                {% if issue.status == 'new' %}
+                                    <span class="status-badge status-new">Новая</span>
+                                {% elif issue.status == 'in_progress' %}
+                                    <span class="status-badge status-in-progress">В работе</span>
+                                {% elif issue.status == 'waiting' %}
+                                    <span class="status-badge status-waiting">Ожидает</span>
+                                {% elif issue.status == 'testing' %}
+                                    <span class="status-badge status-testing">Тестирование</span>
+                                {% elif issue.status == 'done' %}
+                                    <span class="status-badge status-done">Выполнена</span>
+                                {% elif issue.status == 'closed' %}
+                                    <span class="status-badge status-closed">Закрыта</span>
+                                {% else %}
+                                    <span class="status-badge status-new">Новая</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ issue.date_create|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty">Заявки не найдены.</div>
+            {% endif %}
+        {% else %}
+            {% if issues %}
+            <div class="kanban-board">
+                {% for status_group in issues_by_status %}
+                <div class="kanban-column" data-status="{{ status_group.code }}">
+                    <div class="kanban-column-header">
+                        <span>{{ status_group.label }}</span>
+                        <span class="kanban-column-count">{{ status_group.count }}</span>
+                    </div>
+                    {% for issue in status_group.issues %}
+                    <div class="kanban-card" 
+                         draggable="true" 
+                         data-issue-id="{{ issue.id }}" 
+                         data-status="{{ status_group.code }}"
+                         data-url="{% url 'issue-detail' issue.id %}">
+                        <div class="kanban-card-title">{{ issue.name }}</div>
+                        {% if issue.Companies %}
+                        <div class="kanban-card-company">{{ issue.Companies.name }}</div>
+                        {% endif %}
+                        {% if issue.users %}
+                        <div class="kanban-card-meta">👤 {{ issue.users.name|default:issue.users.email|default:"—" }}</div>
+                        {% endif %}
+                        <div class="kanban-card-meta">📅 {{ issue.date_create|date:"d.m.Y H:i" }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty">Заявки не найдены.</div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработка кликов по строкам таблицы
+        document.querySelectorAll('tr[data-url]').forEach(row => {
+            row.addEventListener('click', () => {
+                const url = row.getAttribute('data-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+        
+        // ========== КОД МОДАЛЬНОГО ОКНА (определяем в начале) ==========
+        // Переменные для хранения данных о перетаскивании (для модального окна)
+        let pendingStatusChange = null;
+        
+        // Функция для показа модального окна
+        function showStatusChangeModal(card, fromColumn, targetColumn, newStatus, oldStatus, issueId) {
+            const modal = document.getElementById('statusChangeModal');
+            const form = document.getElementById('statusChangeForm');
+            const commentField = document.getElementById('statusComment');
+            const errorMessage = document.getElementById('commentError');
+            
+            if (!modal || !form || !commentField) {
+                console.error('Модальное окно не найдено');
+                return;
+            }
+            
+            // Сохраняем данные о перетаскивании
+            pendingStatusChange = {
+                card: card,
+                fromColumn: fromColumn,
+                targetColumn: targetColumn,
+                newStatus: newStatus,
+                oldStatus: oldStatus,
+                issueId: issueId
+            };
+            
+            // Очищаем форму
+            commentField.value = '';
+            commentField.classList.remove('error');
+            if (errorMessage) {
+                errorMessage.classList.remove('show');
+            }
+            
+            // Показываем модальное окно
+            modal.classList.add('active');
+            commentField.focus();
+        }
+        
+        // Функция для скрытия модального окна
+        function hideStatusChangeModal() {
+            const modal = document.getElementById('statusChangeModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            pendingStatusChange = null;
+        }
+        
+        // Делаем функции доступными глобально
+        window.showStatusChangeModal = showStatusChangeModal;
+        window.hideStatusChangeModal = hideStatusChangeModal;
+        
+        // ========== DRAG AND DROP ==========
+        // Drag and Drop для канбан-доски
+        let draggedCard = null;
+        let draggedFromColumn = null;
+        
+        // Обработка начала перетаскивания
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            card.addEventListener('dragstart', function(e) {
+                draggedCard = this;
+                draggedFromColumn = this.closest('.kanban-column');
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.outerHTML);
+            });
+            
+            card.addEventListener('dragend', function(e) {
+                this.classList.remove('dragging');
+                document.querySelectorAll('.kanban-column').forEach(col => {
+                    col.classList.remove('drag-over');
+                });
+            });
+            
+            // Предотвращаем переход по ссылке при перетаскивании
+            let isDragging = false;
+            card.addEventListener('mousedown', function() {
+                isDragging = false;
+            });
+            card.addEventListener('mousemove', function() {
+                isDragging = true;
+            });
+            card.addEventListener('click', function(e) {
+                if (!isDragging && !this.classList.contains('dragging')) {
+                    const url = this.getAttribute('data-url');
+                    if (url) {
+                        window.location.href = url;
+                    }
+                }
+                isDragging = false;
+            });
+        });
+        
+        // Обработка перетаскивания над колонками
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            column.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                this.classList.add('drag-over');
+            });
+            
+            column.addEventListener('dragleave', function(e) {
+                // Проверяем, что мы действительно покинули колонку
+                if (!this.contains(e.relatedTarget)) {
+                    this.classList.remove('drag-over');
+                }
+            });
+            
+            column.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('drag-over');
+                
+                if (!draggedCard) return;
+                
+                // Сохраняем ссылки в локальных переменных
+                const card = draggedCard;
+                const fromColumn = draggedFromColumn;
+                const targetColumn = this;
+                
+                const newStatus = targetColumn.getAttribute('data-status');
+                const oldStatus = card.getAttribute('data-status');
+                const issueId = card.getAttribute('data-issue-id');
+                
+                // Если статус не изменился, ничего не делаем
+                if (newStatus === oldStatus) {
+                    draggedCard = null;
+                    draggedFromColumn = null;
+                    return;
+                }
+                
+                // Возвращаем карточку в исходную колонку (если браузер уже переместил её)
+                if (fromColumn && !fromColumn.contains(card)) {
+                    fromColumn.appendChild(card);
+                }
+                
+                // Показываем модальное окно для ввода комментария
+                if (typeof window.showStatusChangeModal === 'function') {
+                    window.showStatusChangeModal(card, fromColumn, targetColumn, newStatus, oldStatus, issueId);
+                } else {
+                    console.error('Функция showStatusChangeModal не найдена. Попробуйте перезагрузить страницу.');
+                    // Возвращаем карточку обратно
+                    if (fromColumn && card) {
+                        fromColumn.appendChild(card);
+                    }
+                }
+                
+                // Сбрасываем переменные (они сохранены в pendingStatusChange)
+                draggedCard = null;
+                draggedFromColumn = null;
+            });
+        });
+        
+        // Функция для получения CSRF токена
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            // Альтернативный способ получения CSRF токена из мета-тега
+            if (!cookieValue) {
+                const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                if (csrfMeta) {
+                    cookieValue = csrfMeta.getAttribute('content');
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Функция для обновления счетчиков колонок
+        function updateColumnCounts() {
+            document.querySelectorAll('.kanban-column').forEach(column => {
+                const count = column.querySelectorAll('.kanban-card').length;
+                const countElement = column.querySelector('.kanban-column-count');
+                if (countElement) {
+                    countElement.textContent = count;
+                }
+            });
+        }
+        
+        // Функция для показа сообщений
+        function showMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+            messageDiv.style.position = 'fixed';
+            messageDiv.style.top = '20px';
+            messageDiv.style.right = '20px';
+            messageDiv.style.zIndex = '10000';
+            messageDiv.style.minWidth = '300px';
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+        
+        // Обработчик отправки формы
+        const statusChangeForm = document.getElementById('statusChangeForm');
+        if (statusChangeForm) {
+            statusChangeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const commentField = document.getElementById('statusComment');
+                const errorMessage = document.getElementById('commentError');
+                if (!commentField) {
+                    console.error('Поле комментария не найдено');
+                    return;
+                }
+                
+                const comment = commentField.value.trim();
+                
+                // Валидация
+                if (!comment) {
+                    commentField.classList.add('error');
+                    if (errorMessage) {
+                        errorMessage.classList.add('show');
+                    }
+                    return;
+                }
+                
+                if (!pendingStatusChange) {
+                    console.error('Нет данных о перетаскивании');
+                    hideStatusChangeModal();
+                    return;
+                }
+                
+                const { card, fromColumn, targetColumn, newStatus, issueId } = pendingStatusChange;
+                
+                // Убираем индикацию загрузки
+                if (card) {
+                    card.style.opacity = '0.5';
+                    card.style.pointerEvents = 'none';
+                }
+                
+                // Отправляем AJAX запрос
+                fetch(`/issues/${issueId}/update-status/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        comment: comment
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Убираем индикацию загрузки
+                    if (card) {
+                        card.style.opacity = '1';
+                        card.style.pointerEvents = 'auto';
+                    }
+                    
+                    if (data.success) {
+                        // Перемещаем карточку в новую колонку
+                        if (card) {
+                            card.setAttribute('data-status', newStatus);
+                            targetColumn.appendChild(card);
+                        }
+                        
+                        // Обновляем счетчики
+                        if (typeof updateColumnCounts === 'function') {
+                            updateColumnCounts();
+                        }
+                        
+                        // Показываем сообщение об успехе
+                        if (typeof showMessage === 'function') {
+                            showMessage('Статус заявки обновлен', 'success');
+                        }
+                    } else {
+                        if (typeof showMessage === 'function') {
+                            showMessage(data.error || 'Ошибка при обновлении статуса', 'error');
+                        }
+                        // Возвращаем карточку обратно
+                        if (fromColumn && card) {
+                            fromColumn.appendChild(card);
+                        }
+                    }
+                    
+                    hideStatusChangeModal();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Убираем индикацию загрузки
+                    if (card) {
+                        card.style.opacity = '1';
+                        card.style.pointerEvents = 'auto';
+                    }
+                    if (typeof showMessage === 'function') {
+                        showMessage('Ошибка при обновлении статуса: ' + error.message, 'error');
+                    }
+                    // Возвращаем карточку обратно
+                    if (fromColumn && card) {
+                        fromColumn.appendChild(card);
+                    }
+                    
+                    hideStatusChangeModal();
+                });
+            });
+        }
+        
+        // Обработчик кнопки "Отмена"
+        const cancelBtn = document.getElementById('cancelStatusChange');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                if (pendingStatusChange) {
+                    const { card, fromColumn } = pendingStatusChange;
+                    // Возвращаем карточку обратно
+                    if (fromColumn && card) {
+                        card.style.opacity = '1';
+                        card.style.pointerEvents = 'auto';
+                        fromColumn.appendChild(card);
+                    }
+                }
+                hideStatusChangeModal();
+            });
+        }
+        
+        // Закрытие модального окна при клике на overlay
+        const modal = document.getElementById('statusChangeModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    const cancelBtn = document.getElementById('cancelStatusChange');
+                    if (cancelBtn) {
+                        cancelBtn.click();
+                    }
+                }
+            });
+        }
+        
+        // Обработчик изменения поля комментария
+        const commentField = document.getElementById('statusComment');
+        if (commentField) {
+            commentField.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('error');
+                    const errorMsg = document.getElementById('commentError');
+                    if (errorMsg) {
+                        errorMsg.classList.remove('show');
+                    }
+                }
+            });
+        }
+    });
+    </script>
+    
+    <!-- Модальное окно для комментария при изменении статуса -->
+    <div id="statusChangeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title">Изменение статуса заявки</div>
+            <form id="statusChangeForm" class="modal-form">
+                <label for="statusComment">
+                    Комментарий <span style="color: #b71c1c;">*</span>
+                </label>
+                <textarea id="statusComment" name="comment" placeholder="Укажите причину изменения статуса..." required></textarea>
+                <div class="error-message" id="commentError">Поле комментария обязательно для заполнения</div>
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-secondary" id="cancelStatusChange">Отмена</button>
+                    <button type="submit" class="modal-btn modal-btn-primary" id="confirmStatusChange">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+
+

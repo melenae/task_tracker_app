@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% if issue %}Заявка: {{ issue.name }}{% else %}Новая заявка{% endif %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 20px; }
+        .container { max-width: 100%; margin: 0; padding: 0; }
+        .header-section { max-width: 100%; margin: 0 auto 20px; padding: 0 20px; }
+        h1 { margin-bottom: 16px; }
+        .form-wrapper { display: flex; gap: 20px; width: 100%; }
+        .form-left { flex: 1; min-width: 0; }
+        .form-right { flex: 1; min-width: 0; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #e0e0e0; color: #37474f; }
+        form label { display: block; font-weight: 600; margin-top: 12px; margin-bottom: 6px; font-size: 13px; color: #546e7a; }
+        form input, form textarea, form select { width: 100%; padding: 10px; border: 1px solid #cfd8dc; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
+        form textarea { resize: vertical; }
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .form-row > div { flex: 1; }
+        .form-actions { display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .btn-primary { background: #1976d2; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        .btn-primary:hover { background: #1565c0; }
+        .btn-secondary { background: #eceff1; color: #455a64; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; }
+        .messages { margin-bottom: 20px; }
+        .message { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+        .comment-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+        .comment-item { padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; background: #fafafa; }
+        .comment-meta { display: flex; justify-content: space-between; font-size: 12px; color: #607d8b; margin-bottom: 8px; }
+        .comment-body { color: #37474f; white-space: pre-line; font-size: 13px; }
+        .empty { padding: 12px; color: #607d8b; text-align: center; }
+        .applicant-type { display: none; }
+        .applicant-type.active { display: flex; }
+        .readonly-field { background: #f5f5f5; color: #546e7a; padding: 10px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .field-error { color: #b71c1c; font-size: 12px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    {% include "includes/header.html" %}
+    <div class="header-section">
+        <a href="{% url 'issues' %}" class="btn-secondary" style="margin-bottom: 16px;">← К списку заявок</a>
+        <h1>{% if issue %}Редактировать заявку{% else %}Создать заявку{% endif %}</h1>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <form method="post" style="max-width: 100%; padding: 0 20px;">
+        {% csrf_token %}
+        <div class="form-wrapper">
+            <!-- Левая колонка -->
+            <div class="form-left">
+                <!-- Блок Сведения -->
+                <div class="card">
+                    <div class="card-title">Сведения</div>
+                    <div class="form-row">
+                        <div>
+                            <label>Код</label>
+                            <div class="readonly-field">{% if issue %}{{ issue.id }}{% else %}—{% endif %}</div>
+                        </div>
+                        <div>
+                            <label for="{{ form.parent.id_for_label }}">{{ form.parent.label }}</label>
+                            {{ form.parent }}
+                            {% if form.parent.errors %}
+                                <div class="field-error">{{ form.parent.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label>Проект</label>
+                            <div class="readonly-field">
+                                {% if issue %}
+                                    {% if issue.Companies and issue.Companies.owner %}{{ issue.Companies.owner.name }}{% elif issue.DataBases and issue.DataBases.owner %}{{ issue.DataBases.owner.name }}{% elif issue.Services and issue.Services.company and issue.Services.company.owner %}{{ issue.Services.company.owner.name }}{% else %}—{% endif %}
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="{{ form.priority.id_for_label }}">{{ form.priority.label }}</label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}
+                                <div class="field-error">{{ form.priority.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="field-error">{{ form.name.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                            <div class="field-error">{{ form.content.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Блок Подробности -->
+                <div class="card">
+                    <div class="card-title">Подробности</div>
+                    <div class="form-row">
+                        <div>
+                            <label for="{{ form.sprint.id_for_label }}">{{ form.sprint.label }}</label>
+                            {{ form.sprint }}
+                            {% if form.sprint.errors %}
+                                <div class="field-error">{{ form.sprint.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label>Топик</label>
+                            <div class="readonly-field">{% if issue and issue.Services %}{{ issue.Services.name }}{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="{{ form.comment.id_for_label }}">
+                            {{ form.comment.label }}
+                            {% if issue %}
+                                <span style="color: #f57c00; font-size: 11px; font-weight: normal;">(обязателен при изменении статуса)</span>
+                            {% endif %}
+                        </label>
+                        {{ form.comment }}
+                        {% if form.comment.errors %}
+                            <div class="field-error">{{ form.comment.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if issue %}
+                    <div style="margin-top: 20px;">
+                        <div class="card-title" style="font-size: 16px; margin-top: 0;">Предыдущие комментарии</div>
+                        {% if comments %}
+                            <div class="comment-list">
+                                {% for comment in comments %}
+                                <div class="comment-item">
+                                    <div class="comment-meta">
+                                        <strong>{% if comment.user %}{{ comment.user.name|default:comment.user.email|default:"Неизвестный" }}{% else %}Неизвестный{% endif %}</strong>
+                                        <span>{{ comment.date_create|date:"d.m.Y H:i" }}</span>
+                                    </div>
+                                    <div class="comment-body">{{ comment.comment|linebreaksbr }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="empty">Комментариев пока нет.</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Правая колонка -->
+            <div class="form-right">
+                <!-- Блок Информация -->
+                <div class="card">
+                    <div class="card-title">Информация</div>
+                    <div class="form-row">
+                        <div>
+                            <label>СЛА</label>
+                            <div class="readonly-field">
+                                {% if issue %}
+                                    Реакция: {{ issue.sla_reac|default:"—" }}<br>
+                                    Выполнение: {{ issue.sla_exec|default:"—" }}<br>
+                                    Проверка: {{ issue.sla_check|default:"—" }}<br>
+                                    Дедлайн: {{ issue.sla_deadline|default:"—" }}
+                                {% else %}—{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="field-error">{{ form.status.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label>Дата создания</label>
+                            <div class="readonly-field">{% if issue %}{{ issue.date_create|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="{{ form.DataBases.id_for_label }}">{{ form.DataBases.label }}</label>
+                        {{ form.DataBases }}
+                        {% if form.DataBases.errors %}
+                            <div class="field-error">{{ form.DataBases.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.Companies.id_for_label }}">{{ form.Companies.label }}</label>
+                        {{ form.Companies }}
+                        {% if form.Companies.errors %}
+                            <div class="field-error">{{ form.Companies.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.Services.id_for_label }}">{{ form.Services.label }}</label>
+                        {{ form.Services }}
+                        {% if form.Services.errors %}
+                            <div class="field-error">{{ form.Services.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Блок Нормативы -->
+                <div class="card">
+                    <div class="card-title">Нормативы</div>
+                    <div style="margin-bottom: 16px;">
+                        <div style="font-weight: 600; margin-bottom: 12px; color: #546e7a;">План</div>
+                        <div class="form-row">
+                            <div>
+                                <label for="{{ form.date_start_plan.id_for_label }}">Начать</label>
+                                {{ form.date_start_plan }}
+                                {% if form.date_start_plan.errors %}
+                                    <div class="field-error">{{ form.date_start_plan.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.date_end_plan.id_for_label }}">Завершить</label>
+                                {{ form.date_end_plan }}
+                                {% if form.date_end_plan.errors %}
+                                    <div class="field-error">{{ form.date_end_plan.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="{{ form.date_check.id_for_label }}">Проверить</label>
+                                {{ form.date_check }}
+                                {% if form.date_check.errors %}
+                                    <div class="field-error">{{ form.date_check.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 12px; color: #546e7a;">Факт</div>
+                        <div class="form-row">
+                            <div>
+                                <label>Начато</label>
+                                <div class="readonly-field">{% if issue %}{{ issue.date_create|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
+                            </div>
+                            <div>
+                                <label for="{{ form.deadline.id_for_label }}">Завершить</label>
+                                {{ form.deadline }}
+                                {% if form.deadline.errors %}
+                                    <div class="field-error">{{ form.deadline.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label>Проверено</label>
+                                <div class="readonly-field">{% if issue and issue.date_check %}{{ issue.date_check|date:"d.m.Y H:i" }}{% else %}—{% endif %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Блок Рабочая группа -->
+                <div class="card">
+                    <div class="card-title">Рабочая группа</div>
+                    <div class="form-row">
+                        <div>
+                            <label for="{{ form.applicant_type.id_for_label }}">Тип инициатора</label>
+                            {{ form.applicant_type }}
+                            {% if form.applicant_type.errors %}
+                                <div class="field-error">{{ form.applicant_type.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-row applicant-type applicant-type-user">
+                        <div>
+                            <label for="{{ form.applicant_user.id_for_label }}">Инициатор (пользователь)</label>
+                            {{ form.applicant_user }}
+                            {% if form.applicant_user.errors %}
+                                <div class="field-error">{{ form.applicant_user.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-row applicant-type applicant-type-client">
+                        <div>
+                            <label for="{{ form.applicant_client.id_for_label }}">Инициатор (клиент)</label>
+                            {{ form.applicant_client }}
+                            {% if form.applicant_client.errors %}
+                                <div class="field-error">{{ form.applicant_client.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div>
+                            <label for="{{ form.users.id_for_label }}">Ответственный</label>
+                            {{ form.users }}
+                            {% if form.users.errors %}
+                                <div class="field-error">{{ form.users.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.supervisor.id_for_label }}">Контролер</label>
+                            {{ form.supervisor }}
+                            {% if form.supervisor.errors %}
+                                <div class="field-error">{{ form.supervisor.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions" style="max-width: 100%; padding: 0 20px;">
+            <button type="submit" class="btn-primary">Сохранить</button>
+            <a href="{% url 'issues' %}" class="btn-secondary">Отмена</a>
+        </div>
+    </form>
+    
+    {% if issue %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusField = document.querySelector('#id_status');
+        const commentField = document.querySelector('#id_comment');
+        
+        if (statusField && commentField) {
+            const initialStatus = statusField.value;
+            
+            // Добавляем обработчик изменения статуса
+            statusField.addEventListener('change', function() {
+                const newStatus = this.value;
+                if (newStatus !== initialStatus) {
+                    // Статус изменился - делаем комментарий обязательным визуально
+                    commentField.required = true;
+                    commentField.style.borderColor = '#f57c00';
+                    commentField.style.borderWidth = '2px';
+                    if (!commentField.value.trim()) {
+                        commentField.setAttribute('placeholder', '⚠️ Комментарий обязателен при изменении статуса');
+                    }
+                } else {
+                    // Статус не изменился - комментарий необязателен
+                    commentField.required = false;
+                    commentField.style.borderColor = '';
+                    commentField.style.borderWidth = '';
+                    commentField.setAttribute('placeholder', 'Комментарий');
+                }
+            });
+            
+            // Проверяем при загрузке страницы, если статус уже изменен
+            if (statusField.value !== initialStatus) {
+                commentField.required = true;
+                commentField.style.borderColor = '#f57c00';
+                commentField.style.borderWidth = '2px';
+                if (!commentField.value.trim()) {
+                    commentField.setAttribute('placeholder', '⚠️ Комментарий обязателен при изменении статуса');
+                }
+            }
+        }
+    });
+    </script>
+    {% endif %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const applicantTypeField = document.querySelector('#id_applicant_type');
+        const userRow = document.querySelector('.applicant-type-user');
+        const clientRow = document.querySelector('.applicant-type-client');
+
+        function toggleApplicantRows() {
+            if (!applicantTypeField) {
+                return;
+            }
+            const selectedType = applicantTypeField.value || 'user';
+            if (userRow) {
+                userRow.classList.toggle('active', selectedType === 'user');
+            }
+            if (clientRow) {
+                clientRow.classList.toggle('active', selectedType === 'client');
+            }
+        }
+
+        toggleApplicantRows();
+        if (applicantTypeField) {
+            applicantTypeField.addEventListener('change', toggleApplicantRows);
+        }
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f8; margin: 0; padding: 30px; }
+        .container { max-width: 1100px; margin: auto; }
+        h1 { margin-bottom: 18px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eceff1; }
+        th { background: #eceff1; font-weight: 600; }
+        .messages { margin-bottom: 20px; }
+        .message { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+        .form-box { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-top: 24px; display: none; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 8px; border: 1px solid #cfd8dc; }
+        button { background: #1976d2; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    {% include "includes/header.html" %}
+    <div class="toolbar">
+        <h1>Пользователи</h1>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Email</th>
+                <th>Телефон</th>
+                <th>Роль</th>
+                <th>Владелец</th>
+                <th>Дата создания</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>
+                    <a href="#"
+                       class="user-link"
+                       data-id="{{ user.id }}"
+                       data-name="{{ user.name|default:'' }}"
+                       data-email="{{ user.email|default:'' }}"
+                       data-phone="{{ user.phone|default:'' }}"
+                       data-role="{{ user.role }}"
+                       data-owner="{{ user.owner_id|default_if_none:'' }}"
+                    >{{ user.name|default:"-" }}</a>
+                </td>
+                <td>{{ user.email|default:"-" }}</td>
+                <td>{{ user.phone|default:"-" }}</td>
+                <td>{{ user.get_role_display }}</td>
+                <td>
+                    {% if user.owner %}
+                        {{ user.owner.name|default:user.owner.slug|default:"-" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>{{ user.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center;">Пользователей пока нет.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<div class="modal" id="user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center;">
+    <div class="form-box" style="display:block; max-width:520px; position:relative;">
+        <button type="button" id="close-user-modal" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:20px; cursor:pointer;">×</button>
+        <h2>Редактировать пользователя</h2>
+        <form method="post" id="user-update-form">
+            {% csrf_token %}
+            <label for="modal-user-name">Имя</label>
+            <input type="text" id="modal-user-name" name="name" required>
+            <label for="modal-user-email">Email</label>
+            <input type="email" id="modal-user-email" name="email" required>
+            <label for="modal-user-phone">Телефон</label>
+            <input type="text" id="modal-user-phone" name="phone">
+            <label for="modal-user-role">Роль</label>
+            <select id="modal-user-role" name="role">
+                <option value="user">Пользователь</option>
+                <option value="admin">Администратор</option>
+            </select>
+            <label for="modal-user-owner">Владелец</label>
+            <select id="modal-user-owner" name="owner">
+                <option value="">-- не назначен --</option>
+            {% for account in update_form.fields.owner.queryset %}
+                <option value="{{ account.id }}">{{ account.name|default:account.slug }}</option>
+            {% endfor %}
+            </select>
+            <button type="submit">Сохранить</button>
+        </form>
+        <form method="post" id="user-delete-form" style="margin-top:12px;">
+            {% csrf_token %}
+            <button type="submit" style="background:#c62828;">Удалить пользователя</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const toggleUserBtn = document.getElementById('toggle-user-form');
+    const userForm = document.getElementById('user-form');
+    if (toggleUserBtn && userForm) {
+        toggleUserBtn.addEventListener('click', () => {
+            const isHidden = userForm.style.display === 'none' || userForm.style.display === '';
+            userForm.style.display = isHidden ? 'block' : 'none';
+            toggleUserBtn.textContent = isHidden ? 'Скрыть форму' : 'Добавить пользователя';
+        });
+    }
+
+    const userModal = document.getElementById('user-modal');
+    const closeUserModal = document.getElementById('close-user-modal');
+    const userUpdateForm = document.getElementById('user-update-form');
+    const userDeleteForm = document.getElementById('user-delete-form');
+
+    document.querySelectorAll('.user-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const id = link.dataset.id;
+            document.getElementById('modal-user-name').value = link.dataset.name || '';
+            document.getElementById('modal-user-email').value = link.dataset.email || '';
+            document.getElementById('modal-user-phone').value = link.dataset.phone || '';
+            document.getElementById('modal-user-role').value = link.dataset.role || 'user';
+            const ownerSelect = document.getElementById('modal-user-owner');
+            if (ownerSelect) {
+                ownerSelect.value = link.dataset.owner || '';
+            }
+            userUpdateForm.action = `/users/${id}/update/`;
+            userDeleteForm.action = `/users/${id}/delete/`;
+            userModal.style.display = 'flex';
+        });
+    });
+
+    if (closeUserModal) {
+        closeUserModal.addEventListener('click', () => {
+            userModal.style.display = 'none';
+        });
+    }
+
+    if (userDeleteForm) {
+        userDeleteForm.addEventListener('submit', (e) => {
+            if (!confirm('Вы уверены, что хотите удалить пользователя?')) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    window.addEventListener('click', (e) => {
+        if (e.target === userModal) {
+            userModal.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
+

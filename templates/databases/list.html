@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Базы данных</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 30px; }
+        .container { max-width: 1000px; margin: auto; }
+        h1 { margin-bottom: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #eceff1; }
+        th { text-align: left; padding: 12px; font-weight: 600; }
+        td { padding: 12px; border-top: 1px solid #e0e0e0; }
+        tbody tr:hover { background: #f5f5f5; }
+        form { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        label { display: block; font-weight: 600; margin-bottom: 6px; margin-top: 12px; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 8px; border: 1px solid #cfd8dc; box-sizing: border-box; }
+        button { background: #1976d2; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1565c0; }
+        .btn-add { background: #4caf50; margin-bottom: 20px; }
+        .btn-add:hover { background: #45a049; }
+        .empty { background: #fff; padding: 16px; border-radius: 8px; text-align: center; color: #607d8b; }
+        .messages { margin-bottom: 20px; }
+        .message { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+        .form-container { display: none; margin-top: 20px; }
+        .form-container.active { display: block; }
+    </style>
+</head>
+<body>
+    {% include "includes/header.html" %}
+    <div class="container">
+        <h1>
+            {% if project %}
+                Базы данных проекта: {{ project.name }}
+            {% else %}
+                Базы данных
+            {% endif %}
+        </h1>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% include "includes/project_filter.html" %}
+
+        {% if can_edit and form %}
+        <button class="btn-add" onclick="toggleForm()">Добавить базу данных</button>
+        <div class="form-container" id="createForm">
+            <div class="card">
+                <h2>Создать базу данных</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="message error">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                    {% endfor %}
+                    <button type="submit">Создать</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if databases %}
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Путь</th>
+                        <th>Проект</th>
+                        <th>Сервер</th>
+                        <th>Описание</th>
+                        <th>Дата создания</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for database in databases %}
+                    <tr>
+                        <td><strong>{{ database.path }}</strong></td>
+                        <td>{{ database.owner.name|default:"—" }}</td>
+                        <td>{{ database.server }}</td>
+                        <td>{{ database.content|truncatewords:10|default:"—" }}</td>
+                        <td>{{ database.date_create|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">Базы данных не найдены.</div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleForm() {
+            const form = document.getElementById('createForm');
+            form.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Вход или регистрация</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 40px 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            border: 1px solid #cfd8dc;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #1976d2;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .messages {
+            max-width: 900px;
+            margin: 0 auto 24px;
+        }
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+    </style>
+</head>
+<body>
+
+{% include "includes/header.html" %}
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    </div>
+{% endif %}
+
+<div class="container">
+    <div class="card">
+        <h2>Вход</h2>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in login_form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="message error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            {% endfor %}
+            <button type="submit" name="login-submit">Войти</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Регистрация</h2>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in register_form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div class="message error">{{ field.errors|striptags }}</div>
+                {% endif %}
+            {% endfor %}
+            <button type="submit" name="register-submit">Создать аккаунт</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
+

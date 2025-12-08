@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Проекты</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f7fa; margin: 0; padding: 30px; }
+        .container { max-width: 1200px; margin: auto; }
+        h1 { margin-bottom: 16px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #eceff1; }
+        th { text-align: left; padding: 12px; font-weight: 600; }
+        td { padding: 12px; border-top: 1px solid #e0e0e0; }
+        tbody tr:hover { background: #f5f5f5; }
+        .form-container { display: none; margin-top: 20px; }
+        .form-container.active { display: block; }
+        form { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        label { display: block; font-weight: 600; margin-bottom: 6px; margin-top: 12px; }
+        input, textarea, select { width: 100%; padding: 10px; margin-bottom: 14px; border-radius: 8px; border: 1px solid #cfd8dc; box-sizing: border-box; }
+        button { background: #1976d2; color: #fff; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1565c0; }
+        .btn-add { background: #4caf50; margin-bottom: 20px; }
+        .btn-add:hover { background: #45a049; }
+        .btn-danger { background: #c62828; }
+        .btn-danger:hover { background: #b71c1c; }
+        .empty { background: #fff; padding: 16px; border-radius: 8px; text-align: center; color: #607d8b; }
+        .messages { margin-bottom: 20px; }
+        .message { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; }
+        .message.success { background: #e8f5e9; color: #1b5e20; }
+        .message.error { background: #ffebee; color: #b71c1c; }
+        .project-link { color: #1976d2; text-decoration: none; cursor: pointer; }
+        .project-link:hover { text-decoration: underline; }
+        .info-badge { display: inline-block; padding: 4px 8px; background: #e3f2fd; color: #1976d2; border-radius: 4px; font-size: 12px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: center; justify-content: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; border-radius: 12px; padding: 24px; width: 90%; max-width: 600px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; cursor: pointer; color: #78909c; }
+        .modal-close:hover { color: #37474f; }
+        .modal h2 { margin-top: 0; }
+        .delete-confirm { display: none; margin-top: 16px; padding: 12px; background: #ffebee; border-radius: 8px; }
+        .delete-confirm.active { display: block; }
+        .modal-content { background: #fff; border-radius: 12px; padding: 24px; width: 95%; max-width: 900px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 12px; }
+        .modal-tab { background: #eceff1; border: none; padding: 8px 14px; border-radius: 20px; cursor: pointer; font-weight: 600; color: #546e7a; }
+        .modal-tab.active { background: #1976d2; color: #fff; }
+        .modal-section { display: none; }
+        .modal-section.active { display: block; }
+        .team-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .team-table th, .team-table td { border: 1px solid #e0e0e0; padding: 8px; font-size: 13px; }
+        .team-empty { padding: 12px; background: #fff; border-radius: 8px; border: 1px dashed #cfd8dc; color: #607d8b; text-align: center; }
+        .meta-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+        .meta-field { flex: 1 1 200px; }
+        .meta-field input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cfd8dc; background: #eceff1; color: #455a64; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% include "includes/header.html" %}
+        <h1>Проекты</h1>
+        <button type="button" style="margin-bottom: 16px;" onclick="showHelloWorld()">Показать Hello World</button>
+
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message {{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if is_admin %}
+        <button class="btn-add" onclick="toggleForm()">Добавить проект</button>
+
+        <div class="form-container" id="createForm">
+            <div class="card">
+                <h2>Создать проект</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="message error">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                    {% endfor %}
+                    <button type="submit">Создать</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if projects or projects_with_info %}
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Описание</th>
+                        <th>Владелец (Аккаунт)</th>
+                        <th>Менеджер</th>
+                        {% if not is_admin %}
+                        <th>Моя роль</th>
+                        <th>Тема</th>
+                        <th>Должность</th>
+                        <th>Дата добавления</th>
+                        {% else %}
+                        <th>Дата создания</th>
+                        <th>Дата обновления</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if is_admin %}
+                        {% for project in projects %}
+                        <tr>
+                            <td>
+                                <a href="#"
+                                   class="project-link project-edit-trigger"
+                                   data-project-id="{{ project.id }}">
+                                    <strong>{{ project.name }}</strong>
+                                </a>
+                            </td>
+                            <td>{{ project.description|truncatewords:15|default:"—" }}</td>
+                            <td>{{ project.owner.name|default:project.owner.slug }}</td>
+                            <td>{% if project.manager %}{{ project.manager.name|default:project.manager.email }}{% else %}—{% endif %}</td>
+                            <td>{{ project.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>{{ project.updated_at|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for project, team_info in projects_with_info %}
+                        <tr>
+                            <td><strong>{{ project.name }}</strong></td>
+                            <td>{{ project.description|truncatewords:15|default:"—" }}</td>
+                            <td>{{ project.owner.name|default:project.owner.slug }}</td>
+                            <td>{% if project.manager %}{{ project.manager.name|default:project.manager.email }}{% else %}—{% endif %}</td>
+                            <td><span class="info-badge">{{ team_info.role }}</span></td>
+                            <td>{{ team_info.topic|default:"—" }}</td>
+                            <td>{{ team_info.job_title|default:"—" }}</td>
+                            <td>
+                                {% if team_info.created_at %}
+                                    {{ team_info.created_at|date:"d.m.Y H:i" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">{% if is_admin %}Проекты не найдены{% else %}У вас пока нет проектов. Ожидайте добавления администратором.{% endif %}</div>
+        {% endif %}
+    </div>
+
+    <!-- Modal для редактирования проекта (только для админов) -->
+    {% if is_admin %}
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeEditModal()">×</button>
+            <h2>Редактировать проект</h2>
+            <form method="post" id="editProjectForm">
+                {% csrf_token %}
+                <label for="edit-name">Название проекта</label>
+                <input type="text" id="edit-name" name="name" required>
+                <label for="edit-owner">Владелец (Аккаунт)</label>
+                <select id="edit-owner" name="owner" required>
+                    <option value="">-- выберите --</option>
+                    {% for account in accounts %}
+                        <option value="{{ account.id }}">{{ account.name|default:account.slug }}</option>
+                    {% endfor %}
+                </select>
+                <div class="modal-tabs">
+                    <button type="button" class="modal-tab active" data-target="project-description-section">Описание</button>
+                    <button type="button" class="modal-tab" data-target="project-team-section">Команда</button>
+                    <button type="button" class="modal-tab" data-target="project-add-user-section">Добавить участника</button>
+                </div>
+                <div id="project-description-section" class="modal-section active" data-section="project-description-section">
+                    <label for="edit-description">Описание проекта</label>
+                    <textarea id="edit-description" name="description" rows="4"></textarea>
+                    <div class="meta-grid">
+                        <div class="meta-field">
+                            <label for="edit-created">Создан</label>
+                            <input type="text" id="edit-created" readonly>
+                        </div>
+                        <div class="meta-field">
+                            <label for="edit-updated">Обновлён</label>
+                            <input type="text" id="edit-updated" readonly>
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 16px;">Сохранить</button>
+                </div>
+            </form>
+            <div id="project-team-section" class="modal-section" data-section="project-team-section">
+                <div id="teamTableWrapper"></div>
+            </div>
+            <!-- Modal для редактирования участника команды -->
+            <div class="modal" id="editTeamModal" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <button class="modal-close" onclick="closeEditTeamModal()">×</button>
+                    <h2>Редактировать участника</h2>
+                    <form method="post" id="editTeamForm">
+                        {% csrf_token %}
+                        <label for="edit-team-role">Роль</label>
+                        <select id="edit-team-role" name="role" required>
+                            <option value="">-- выберите роль --</option>
+                            {% for value, label in project_role_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="edit-team-topic">Тема</label>
+                        <input type="text" id="edit-team-topic" name="topic" placeholder="Тема">
+                        <label for="edit-team-job-title">Должность</label>
+                        <input type="text" id="edit-team-job-title" name="job_title" placeholder="Должность">
+                        <button type="submit">Сохранить</button>
+                    </form>
+                </div>
+            </div>
+            <div id="project-add-user-section" class="modal-section" data-section="project-add-user-section">
+                <form method="post" id="addUserForm">
+                    {% csrf_token %}
+                    <label for="add-user">Пользователь</label>
+                    <select id="add-user" name="user" required>
+                        <option value="">-- выберите --</option>
+                        {% for user in user_queryset %}
+                            <option value="{{ user.id }}">{{ user.name|default:user.email }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="add-role">Роль</label>
+                    <select id="add-role" name="role" required>
+                        <option value="">-- выберите роль --</option>
+                        {% for value, label in project_role_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="add-topic">Тема</label>
+                    <input type="text" id="add-topic" name="topic" placeholder="Тема">
+                    <label for="add-job-title">Должность</label>
+                    <input type="text" id="add-job-title" name="job_title" placeholder="Должность">
+                    <button type="submit">Добавить</button>
+                </form>
+            </div>
+            <form method="post" id="deleteProjectForm" style="margin-top: 16px;">
+                {% csrf_token %}
+                <button type="button" class="btn-danger" onclick="toggleDeleteConfirm()">Удалить проект</button>
+                <div class="delete-confirm" id="deleteConfirm">
+                    <p>Вы уверены, что хотите удалить этот проект?</p>
+                    <button type="submit" class="btn-danger">Да, удалить</button>
+                    <button type="button" onclick="toggleDeleteConfirm()" style="background: #78909c; margin-left: 8px;">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {{ accounts_payload|json_script:"account-data" }}
+    {{ project_payload|json_script:"project-data" }}
+
+    <script>
+        let currentProjectId = null;
+        const accountDataElement = document.getElementById('account-data');
+        let accountsData = [];
+        if (accountDataElement) {
+            try {
+                accountsData = JSON.parse(accountDataElement.textContent || '[]');
+            } catch (error) {
+                console.error('Не удалось распарсить данные аккаунтов', error);
+            }
+        }
+        const projectDataElement = document.getElementById('project-data');
+        const projectDataMap = {};
+        if (projectDataElement) {
+            try {
+                const parsedProjects = JSON.parse(projectDataElement.textContent || '[]');
+                parsedProjects.forEach(project => {
+                    projectDataMap[project.id] = project;
+                });
+            } catch (error) {
+                console.error('Не удалось распарсить данные проектов', error);
+            }
+        }
+
+        function toggleForm() {
+            const form = document.getElementById('createForm');
+            if (form) {
+                form.classList.toggle('active');
+            }
+        }
+
+        function showHelloWorld() {
+            alert('Hello World');
+        }
+
+        function openEditModal(projectId, event) {
+            event.preventDefault();
+            currentProjectId = projectId;
+            const projectInfo = projectDataMap[projectId] || {};
+            const nameField = document.getElementById('edit-name');
+            const descField = document.getElementById('edit-description');
+            if (nameField) nameField.value = projectInfo.name || '';
+            if (descField) descField.value = projectInfo.description || '';
+
+            const ownerSelect = document.getElementById('edit-owner');
+            if (ownerSelect) {
+                ownerSelect.innerHTML = '<option value="">-- выберите --</option>';
+                accountsData.forEach(acc => {
+                    const option = document.createElement('option');
+                    option.value = acc.id;
+                    option.textContent = acc.name;
+                    if (projectInfo.owner_id && acc.id === projectInfo.owner_id) {
+                        option.selected = true;
+                    }
+                    ownerSelect.appendChild(option);
+                });
+            }
+
+            const form = document.getElementById('editProjectForm');
+            if (form) {
+                form.action = `/projects/${projectId}/update/`;
+            }
+            const deleteForm = document.getElementById('deleteProjectForm');
+            if (deleteForm) {
+                deleteForm.action = `/projects/${projectId}/delete/`;
+            }
+            const addForm = document.getElementById('addUserForm');
+            if (addForm) {
+                addForm.action = `/projects/${projectId}/team/add/`;
+            }
+
+            activateTab('project-description-section');
+            populateProjectMeta(projectId);
+            renderTeamTable(projectId);
+
+            const modal = document.getElementById('editModal');
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            const confirm = document.getElementById('deleteConfirm');
+            if (confirm) {
+                confirm.classList.remove('active');
+            }
+            currentProjectId = null;
+        }
+
+        function toggleDeleteConfirm() {
+            const confirm = document.getElementById('deleteConfirm');
+            if (confirm) {
+                confirm.classList.toggle('active');
+            }
+        }
+
+        function populateProjectMeta(projectId) {
+            const meta = projectDataMap[projectId];
+            const descField = document.getElementById('edit-description');
+            const createdField = document.getElementById('edit-created');
+            const updatedField = document.getElementById('edit-updated');
+
+            if (descField) {
+                descField.value = meta?.description || '';
+            }
+            if (createdField) {
+                createdField.value = meta?.created_at || '—';
+            }
+            if (updatedField) {
+                updatedField.value = meta?.updated_at || '—';
+            }
+        }
+
+        function renderTeamTable(projectId) {
+            const container = document.getElementById('teamTableWrapper');
+            if (!container) return;
+            const data = projectDataMap[projectId];
+            if (!data || !data.team_members || data.team_members.length === 0) {
+                container.innerHTML = '<div class="team-empty">Команда ещё не сформирована.</div>';
+                return;
+            }
+
+            const isAdmin = {% if is_admin %}true{% else %}false{% endif %};
+            let tableHTML = '<table class="team-table"><thead><tr><th>Пользователь</th><th>Роль</th><th>Тема</th><th>Должность</th><th>Дата добавления</th>';
+            if (isAdmin) {
+                tableHTML += '<th>Действия</th>';
+            }
+            tableHTML += '</tr></thead><tbody>';
+            data.team_members.forEach(member => {
+                const userLabel = member.user_name || member.user_email || '—';
+                const safeTopic = (member.topic || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeJobTitle = (member.job_title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const safeRole = (member.role || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                tableHTML += `<tr>
+                    <td>${userLabel}</td>
+                    <td>${member.role || '—'}</td>
+                    <td>${member.topic || '—'}</td>
+                    <td>${member.job_title || '—'}</td>
+                    <td>${member.created_at || '—'}</td>`;
+                if (isAdmin) {
+                    tableHTML += `<td>
+                        <button type="button" onclick="openEditTeamModal(${projectId}, ${member.id}, '${safeRole}', '${safeTopic}', '${safeJobTitle}')" style="background: #1976d2; padding: 6px 12px; font-size: 12px; margin-right: 4px;">Редактировать</button>
+                        <form method="post" action="/projects/${projectId}/team/${member.id}/delete/" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить этого участника из проекта?')" style="background: #c62828; padding: 6px 12px; font-size: 12px;">Удалить</button>
+                        </form>
+                    </td>`;
+                }
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+            container.innerHTML = tableHTML;
+        }
+
+        function activateTab(targetId) {
+            document.querySelectorAll('.modal-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.target === targetId);
+            });
+            document.querySelectorAll('.modal-section[data-section]').forEach(section => {
+                section.classList.toggle('active', section.dataset.section === targetId);
+            });
+        }
+
+        document.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', () => activateTab(tab.dataset.target));
+        });
+
+        const editModalEl = document.getElementById('editModal');
+        if (editModalEl) {
+            editModalEl.addEventListener('click', function(e) {
+                if (e.target === this) closeEditModal();
+            });
+        }
+
+        document.querySelectorAll('.project-edit-trigger').forEach(link => {
+            link.addEventListener('click', event => {
+                const projectId = Number(event.currentTarget.dataset.projectId);
+                if (!Number.isNaN(projectId)) {
+                    openEditModal(projectId, event);
+                }
+            });
+        });
+
+        function openEditTeamModal(projectId, teamId, role, topic, jobTitle) {
+            document.getElementById('edit-team-role').value = role || '';
+            document.getElementById('edit-team-topic').value = topic || '';
+            document.getElementById('edit-team-job-title').value = jobTitle || '';
+            document.getElementById('editTeamForm').action = `/projects/${projectId}/team/${teamId}/update/`;
+            document.getElementById('editTeamModal').style.display = 'flex';
+        }
+
+        function closeEditTeamModal() {
+            document.getElementById('editTeamModal').style.display = 'none';
+        }
+
+        const editTeamModal = document.getElementById('editTeamModal');
+        if (editTeamModal) {
+            editTeamModal.addEventListener('click', function(e) {
+                if (e.target === this) closeEditTeamModal();
+            });
+        }
+    </script>
+</body>
+</html>
