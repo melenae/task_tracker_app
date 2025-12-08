@@ -1,330 +1,124 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Track - Issue Tracking System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+# 🚀 Task Track
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            line-height: 1.6;
-            min-height: 100vh;
-        }
+**Issue Tracking System with Kafka Integration**
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
+Web application for extending the functionality of the desktop application **ERP-tools** — a professional tool for team collaboration on ERP system implementation.
 
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 50px;
-            animation: fadeInDown 0.8s ease;
-        }
+---
 
-        .header h1 {
-            font-size: 3.5em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
+## 📋 About the Project
 
-        .header p {
-            font-size: 1.3em;
-            opacity: 0.9;
-        }
+Task Track enables web-based task tracking with bidirectional data synchronization through Apache Kafka.
 
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            animation: fadeInUp 0.8s ease;
-            transition: transform 0.3s ease;
-        }
+## 🛠 Technology Stack
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-        }
+![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apache-kafka&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
 
-        .card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 2em;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 10px;
-        }
+- **Backend:** Django 5.2, Python 3.12
+- **Database:** PostgreSQL (psycopg2-binary)
+- **Caching:** Redis (django-redis)
+- **Messaging:** Apache Kafka 7.5, Zookeeper
+- **Monitoring:** Kafka UI
+- **Infrastructure:** Docker Compose
+- **Configuration:** python-decouple
 
-        .card h3 {
-            color: #764ba2;
-            margin: 20px 0 10px 0;
-            font-size: 1.4em;
-        }
+## ✨ Core Features
 
-        .tech-stack {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
+### 📝 Issue Management
+- Create, update, delete issues
+- Status changes
+- Comments on issues
+- Filtering by projects and statuses
 
-        .tech-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
-            font-weight: 500;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+### 👥 Project Management
+- Create and manage projects
+- Project teams with participant roles
+- Access control via permitted_accounts
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
+### 🏢 Company & Client Management
+- Companies and databases
+- Services and client teams
+- Relationships between entities
 
-        .feature-item {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            transition: all 0.3s ease;
-        }
+### 🔐 Authentication System
+- Email login
+- Django Auth integration
+- Access rights management
 
-        .feature-item:hover {
-            background: #e9ecef;
-            transform: translateX(5px);
-        }
+### Producer
+Sending issue events:
+- `created` - issue creation
+- `updated` - issue update
+- `deleted` - issue deletion
+- `status_changed` - status change
+- `comment_added` - comment addition
 
-        .feature-item h4 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
+### Consumer
+- Receiving events from external system (1C)
+- Data synchronization
+- Consumer group: `django-task-track`
+- Topics: `issues-events`, `issues-events-1c`
 
-        .kafka-flow {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
-            text-align: center;
-        }
+### Features
+- ✅ Asynchronous message processing in separate thread
+- ✅ Loop prevention (ignoring own events)
+- ✅ Automatic event publishing via Django signals
+- ✅ Logging of all Kafka operations
 
-        .flow-arrow {
-            font-size: 2em;
-            color: #667eea;
-            margin: 10px 0;
-        }
+## 🏗 Architectural Solutions
 
-        .flow-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+- **Event-driven architecture** via Kafka for asynchronous event processing
+- **Microservices architecture** with support for high database load
+- **Docker Compose** for service orchestration
+- **Generic Foreign Keys** for flexible model relationships
+- **Access control system** via permitted_accounts
+- **Logging** of all Kafka operations for debugging
 
-        .github-link {
-            display: inline-block;
-            background: #24292e;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 25px;
-            text-decoration: none;
-            font-weight: 600;
-            margin-top: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
+## 🚀 Quick Start
 
-        .github-link:hover {
-            background: #2f363d;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
+### Requirements
+- Python 3.12+
+- Docker and Docker Compose
+- PostgreSQL
 
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+### Installation
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+1. **Clone the repository**
+git clone https://github.com/melenae/task_tracker_app.git
+cd task_tracker_app2. **Create virtual environment**
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux/Mac
+source venv/bin/activate3. **Install dependencies**
+pip install -r requirements.txt4. **Configure environment variables**
+Create `.env` file:
+DB_NAME=task_track
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+KAFKA_BOOTSTRAP_SERVERS=localhost:90925. **Start Docker containers**
+docker-compose up -d6. **Run migrations**
+python manage.py migrate7. **Create superuser**sh
+python manage.py createsuperuser8. **Run development server**
+python manage.py runserver## 📊 Project Scope
 
-        .highlight {
-            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
+- 18 database migrations
+- Multiple models (Users, Projects, Issues, Companies, Services, etc.)
+- RESTful-like URL routing
+- HTML templates for all entities
+- Form system for creation and editing
 
-        ul {
-            list-style: none;
-            padding-left: 0;
-        }
+## 🛠 Development Tools
 
-        ul li {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-        }
+- **Cursor AI** - for accelerated development and refactoring
+- **Django Debug Toolbar** - for debugging
+- **python-decouple** - for environment variable management
 
-        ul li:before {
-            content: "▸";
-            position: absolute;
-            left: 0;
-            color: #667eea;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Task Track</h1>
-            <p>Issue Tracking System with Kafka Integration</p>
-        </div>
-
-        <div class="card">
-            <h2>📋 О проекте</h2>
-            <p>
-                <strong>Task Track</strong> — веб-приложение для расширения функциональности десктопного приложения 
-                <span class="highlight">ERP-tools</span> — профессионального инструмента для командной работы над внедрением ERP систем.
-            </p>
-            <p style="margin-top: 15px;">
-                Проект обеспечивает возможность работы с таск-трекером через веб-интерфейс с двусторонней синхронизацией 
-                данных через Apache Kafka.
-            </p>
-        </div>
-
-        <div class="card">
-            <h2>🛠 Технологический стек</h2>
-            <div class="tech-stack">
-                <span class="tech-badge">Django 5.2</span>
-                <span class="tech-badge">Python 3.12</span>
-                <span class="tech-badge">PostgreSQL</span>
-                <span class="tech-badge">Redis</span>
-                <span class="tech-badge">Apache Kafka 7.5</span>
-                <span class="tech-badge">Zookeeper</span>
-                <span class="tech-badge">Docker Compose</span>
-                <span class="tech-badge">Kafka UI</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>✨ Основной функционал</h2>
-            <div class="features-grid">
-                <div class="feature-item">
-                    <h4>📝 Управление заявками</h4>
-                    <p>Создание, обновление, смена статусов, комментарии к заявкам</p>
-                </div>
-                <div class="feature-item">
-                    <h4>👥 Управление проектами</h4>
-                    <p>Проекты, команды, роли участников, управление доступом</p>
-                </div>
-                <div class="feature-item">
-                    <h4>🏢 Управление компаниями</h4>
-                    <p>Компании, базы данных, сервисы, клиентские команды</p>
-                </div>
-                <div class="feature-item">
-                    <h4>🔐 Система авторизации</h4>
-                    <p>Email-логин, интеграция с Django Auth, управление правами</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>🔄 Интеграция с Kafka</h2>
-            <div class="kafka-flow">
-                <div class="flow-item">
-                    <strong>Producer</strong><br>
-                    Отправка событий о заявках (created, updated, deleted, status_changed, comment_added)
-                </div>
-                <div class="flow-arrow">⬇️</div>
-                <div class="flow-item">
-                    <strong>Kafka Topics</strong><br>
-                    issues-events | issues-events-1c
-                </div>
-                <div class="flow-arrow">⬇️</div>
-                <div class="flow-item">
-                    <strong>Consumer</strong><br>
-                    Получение событий от внешней системы (1С), синхронизация данных
-                </div>
-            </div>
-            <ul style="margin-top: 20px;">
-                <li>Consumer group: <code>django-task-track</code></li>
-                <li>Асинхронная обработка сообщений в отдельном потоке</li>
-                <li>Защита от зацикливания (игнорирование собственных событий)</li>
-                <li>Автоматическая отправка событий через Django signals</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h2>🏗 Архитектурные решения</h2>
-            <ul>
-                <li><strong>Event-driven архитектура</strong> через Kafka для асинхронной обработки событий</li>
-                <li><strong>Микросервисная архитектура</strong> с поддержкой высокой нагрузки на БД</li>
-                <li><strong>Docker Compose</strong> для оркестрации всех сервисов</li>
-                <li><strong>Generic Foreign Keys</strong> для гибких связей между моделями</li>
-                <li><strong>Система прав доступа</strong> через permitted_accounts</li>
-                <li><strong>Логирование</strong> всех операций с Kafka для отладки</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h2>🚀 DevOps</h2>
-            <ul>
-                <li>Docker Compose для развертывания (Kafka, Zookeeper, Kafka UI)</li>
-                <li>Изоляция зависимостей через venv</li>
-                <li>Конфигурация через переменные окружения (python-decouple)</li>
-                <li>Автоматическое создание топиков Kafka</li>
-                <li>Django Debug Toolbar для отладки</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h2>📊 Объем проекта</h2>
-            <ul>
-                <li>18 миграций базы данных</li>
-                <li>Множество моделей (Users, Projects, Issues, Companies, Services и др.)</li>
-                <li>RESTful-подобные URL-маршруты</li>
-                <li>HTML-шаблоны для всех сущностей</li>
-                <li>Система форм для создания и редактирования</li>
-            </ul>
-        </div>
-
-        <div class="card" style="text-align: center;">
-            <h2>🔗 Ссылки</h2>
-            <a href="https://github.com/melenae/task_tracker_app" class="github-link" target="_blank">
-                📦 GitHub Repository
-            </a>
-        </div>
-    </div>
-</body>
-</html>
+## 📝 Project Structure
