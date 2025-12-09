@@ -194,26 +194,6 @@ class DataBases(models.Model):
 
 
 class Services(models.Model):
-    name = models.CharField(max_length=255, verbose_name='Название услуги')
-    content = models.TextField(blank=True, null=True, verbose_name='Содержание')
-    owner = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='services', null=True, blank=True, verbose_name='Проект')
-    applicant = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='services_as_applicant', null=True, blank=True, verbose_name='Заявитель')
-    supervisor = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='services_as_supervisor', null=True, blank=True, verbose_name='Руководитель')
-    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='services_as_user', null=True, blank=True, verbose_name='Пользователь')
-    date_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    date_expired = models.DateTimeField(null=True, blank=True, verbose_name='Дата окончания')
-
-    class Meta:
-        app_label = 'erp_tools'
-        verbose_name = 'Услуга'
-        verbose_name_plural = 'Услуги'
-        ordering = ['-date_create']
-
-    def __str__(self):
-        return self.name or f"Service #{self.pk}"
-
-
-class Services(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена')
     time_check = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Время проверки')
     time_dead_line = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Время дедлайна')

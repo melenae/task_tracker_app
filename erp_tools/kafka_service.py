@@ -118,7 +118,7 @@ class KafkaService:
                     'enable_auto_commit': True,
                     'consumer_timeout_ms': 1000,
                 }
-
+                
                 # Подписываемся на оба топика
                 topics = [settings.KAFKA_ISSUES_TOPIC, settings.KAFKA_ISSUES_1C_TOPIC]
                 logger.info(f"Subscribing to topics: {topics}")
