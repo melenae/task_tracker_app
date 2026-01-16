@@ -41,6 +41,7 @@ from erp_tools.views import (
     issue_detail_view,
     issue_create_view,
     issue_update_status_view,
+    refresh_kafka_messages_view,
     user_delete_view,
     user_update_view,
     users_view,
@@ -70,6 +71,7 @@ urlpatterns = [
     path('issues/', issues_view, name='issues'),
     path('issues/create/', issue_create_view, name='issue-create'),
     path('issues/<int:pk>/', issue_detail_view, name='issue-detail'),
+    path('issues/refresh-kafka/', refresh_kafka_messages_view, name='refresh-kafka-messages'),
     path('companies/<int:company_pk>/client-teams/', company_client_teams_view, name='company-client-teams'),
     path('issues/<int:pk>/update-status/', issue_update_status_view, name='issue-update-status'),
 ]

@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -37,6 +39,8 @@ from .models import (
     Services,
     Users,
 )
+
+logger = logging.getLogger(__name__)
 
 CLIENT_TEAM_ALLOWED_ROLES = {
     'ProjectManager',
@@ -1088,6 +1092,64 @@ def issues_view(request):
         "status_choices": Issues.STATUS_CHOICES,
     }
     return render(request, "issues/list.html", context)
+
+
+@login_required(login_url="login")
+@require_http_methods(["POST"])
+def refresh_kafka_messages_view(request):
+    """Ручная проверка сообщений из Kafka"""
+    from erp_tools.kafka_service import KafkaService
+    messages.info(request, "Hello World")
+    try:
+        logger.info("Manual Kafka refresh started by user %s", request.user)
+        result = KafkaService.manual_poll_messages()
+        logger.info(
+            "Manual Kafka refresh result success=%s processed=%s errors=%s",
+            result.get("success"),
+            result.get("messages_processed"),
+            result.get("errors"),
+        )
+        
+        if result['success']:
+            if result['messages_processed'] > 0:
+                messages.success(
+                    request, 
+                    f"Обработано сообщений из Kafka: {result['messages_processed']}"
+                )
+            else:
+                messages.info(request, "Новых сообщений в Kafka не найдено")
+            
+            if result['errors']:
+                for error in result['errors']:
+                    messages.warning(request, f"Ошибка: {error}")
+        else:
+            error_msg = "Не удалось проверить сообщения из Kafka"
+            if result['errors']:
+                error_msg += f": {', '.join(result['errors'])}"
+            messages.error(request, error_msg)
+            
+    except Exception as e:
+        logger.exception("Manual Kafka refresh failed with exception")
+        messages.error(request, f"Ошибка при проверке сообщений: {str(e)}")
+    
+    # Перенаправляем обратно на страницу заявок с сохранением параметров
+    # Параметры могут быть в GET (из формы) или в POST (из скрытых полей)
+    redirect_url = reverse('issues')
+    params = []
+    
+    # Проверяем параметры из GET или POST
+    project_id = request.GET.get('project') or request.POST.get('project')
+    view_mode = request.GET.get('view') or request.POST.get('view')
+    
+    if project_id:
+        params.append(f"project={project_id}")
+    if view_mode and view_mode != 'table':  # table - значение по умолчанию
+        params.append(f"view={view_mode}")
+    
+    if params:
+        redirect_url += '?' + '&'.join(params)
+    
+    return redirect(redirect_url)
 
 
 @login_required(login_url="login")

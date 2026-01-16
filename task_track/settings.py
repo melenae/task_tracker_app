@@ -138,10 +138,15 @@ INTERNAL_IPS = [
 ]
 
 # Kafka Configuration
-KAFKA_BOOTSTRAP_SERVERS = config('KAFKA_BOOTSTRAP_SERVERS', default='localhost:9092')
+KAFKA_BOOTSTRAP_SERVERS = config('KAFKA_BOOTSTRAP_SERVERS', default='localhost:19092')
 KAFKA_ISSUES_TOPIC = config('KAFKA_ISSUES_TOPIC', default='issues-events')
 KAFKA_ISSUES_1C_TOPIC = config('KAFKA_ISSUES_1C_TOPIC', default='issues-events-1c')
 KAFKA_CONSUMER_GROUP = config('KAFKA_CONSUMER_GROUP', default='django-task-track')
+
+# Kafka Consumer Timeouts (в миллисекундах)
+KAFKA_CONSUMER_POLL_TIMEOUT_MS = config('KAFKA_CONSUMER_POLL_TIMEOUT_MS', default=3600000, cast=int)  # 1 час = 3600000 мс
+KAFKA_MANUAL_POLL_TIMEOUT_MS = config('KAFKA_MANUAL_POLL_TIMEOUT_MS', default=10000, cast=int)  # 10 секунд = 10000 мс
+KAFKA_MANUAL_POLL_BATCH_TIMEOUT_MS = config('KAFKA_MANUAL_POLL_BATCH_TIMEOUT_MS', default=2000, cast=int)  # 2 секунды = 2000 мс
 
 
 # Логирование для Kafka

@@ -4,6 +4,22 @@ from django.forms import ValidationError
 from django.utils.text import slugify
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+import secrets
+import string
+
+
+def generate_external_id(length=32):
+    """
+    Генерирует случайный буквенно-цифровой GUID
+    
+    Args:
+        length: Длина идентификатора (по умолчанию 32 символа)
+    
+    Returns:
+        str: Случайный буквенно-цифровой идентификатор
+    """
+    alphabet = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
 
 
 class Users(models.Model):
@@ -25,10 +41,30 @@ class Users(models.Model):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user', verbose_name='Роль')
     name = models.CharField(max_length=150, blank=True, null=True, verbose_name='Имя')
+    external_id = models.CharField(
+        max_length=32,
+        unique=True,
+        db_index=True,
+        null=True,
+        blank=True,
+        verbose_name='Внешний идентификатор',
+        help_text='Уникальный буквенно-цифровой идентификатор для внешних систем'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     owner = models.ForeignKey('Accounts', on_delete=models.SET_NULL, null=True, blank=True)
     permitted_accounts = models.JSONField(default=list, blank=True)
+
+    def save(self, *args, **kwargs):
+        """Автоматически генерирует external_id при создании пользователя"""
+        if not self.external_id:
+            # Генерируем уникальный external_id
+            while True:
+                external_id = generate_external_id()
+                if not self.__class__.objects.filter(external_id=external_id).exists():
+                    self.external_id = external_id
+                    break
+        super().save(*args, **kwargs)
 
     @property
     def is_admin(self):
@@ -247,7 +283,7 @@ class Issues(models.Model):
     users = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Пользователь')
     # applicant = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='issues_as_applicant', null=True, blank=True, verbose_name='Заявитель (пользователь)')
     # applicant_client = models.ForeignKey(ClientTeams, on_delete=models.SET_NULL, related_name='issues_as_applicant', null=True, blank=True, verbose_name='Заявитель (клиент)')
-    applicant_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to={'model__in': ['users', 'clientteams']})
+    applicant_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ['users', 'clientteams']}, null=True, blank=True)
     applicant_object_id = models.PositiveIntegerField(null=True, blank=True)
     applicant = GenericForeignKey('applicant_content_type', 'applicant_object_id')
     STATUS_CHOICES = [

@@ -6,8 +6,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Глобальный словарь для хранения старого статуса заявки
-_old_statuses = {}
+# Глобальный словарь для отслеживания комментариев, созданных вместе с обновлением заявки
+_pending_comments = {}
 
 
 @receiver(pre_save, sender=Issues)
@@ -17,10 +17,8 @@ def issue_pre_save(sender, instance, **kwargs):
         try:
             old_instance = Issues.objects.get(pk=instance.pk)
             instance._old_status = old_instance.status
-            _old_statuses[instance.pk] = old_instance.status
         except Issues.DoesNotExist:
             instance._old_status = None
-            _old_statuses.pop(instance.pk, None)
     else:
         instance._old_status = None
 
@@ -29,11 +27,6 @@ def issue_pre_save(sender, instance, **kwargs):
 def issue_post_save(sender, instance, created, **kwargs):
     """Отправить событие в Kafka при создании/обновлении заявки"""
     if hasattr(instance, '_skip_kafka_event'):
-        return
-    
-    # Если комментарий будет создан вместе с обновлением/созданием, откладываем отправку
-    if hasattr(instance, '_creating_comment_with_update') and instance._creating_comment_with_update:
-        logger.info(f"Delaying issue {'create' if created else 'update'} event for issue {instance.pk} - comment will be created")
         return
     
     try:
@@ -58,6 +51,17 @@ def issue_post_save(sender, instance, created, **kwargs):
             'sprint_id': instance.sprint_id,
             'parent_id': instance.parent_id,
         }
+        
+        # Проверяем, есть ли ожидающий комментарий для этой заявки
+        if instance.pk in _pending_comments:
+            comment_info = _pending_comments.pop(instance.pk)
+            issue_data['comment'] = {
+                'comment_id': comment_info.get('comment_id'),
+                'comment': comment_info.get('comment'),
+                'user_id': comment_info.get('user_id'),
+                'user_name': comment_info.get('user_name'),
+                'date_create': comment_info.get('date_create'),
+            }
         
         if created:
             KafkaService.send_issue_event('created', issue_data, instance.pk)
@@ -107,67 +111,17 @@ def issue_comment_post_save(sender, instance, created, **kwargs):
             
             # Проверяем, был ли комментарий создан вместе с обновлением заявки
             if hasattr(issue, '_creating_comment_with_update') and issue._creating_comment_with_update:
+                # Сохраняем комментарий для включения в сообщение об обновлении
+                _pending_comments[issue.pk] = {
+                    'comment_id': instance.pk,
+                    'comment': instance.comment or '',
+                    'user_id': instance.user_id,
+                    'user_name': instance.user.name if instance.user else None,
+                    'date_create': instance.date_create.isoformat() if instance.date_create else None,
+                }
+                logger.info(f"Comment {instance.pk} will be included in issue update for issue {issue.pk}")
                 # Удаляем флаг
                 delattr(issue, '_creating_comment_with_update')
-                
-                # Отправляем объединенное сообщение об обновлении с комментарием
-                # Перезагружаем issue из БД, чтобы получить актуальные данные
-                issue_obj = Issues.objects.get(pk=issue.pk)
-                
-                # Получаем старый статус из глобального словаря
-                old_status = _old_statuses.pop(issue.pk, None)
-                
-                issue_data = {
-                    'id': issue_obj.pk,
-                    'name': issue_obj.name,
-                    'content': issue_obj.content or '',
-                    'status': issue_obj.status,
-                    'priority': issue_obj.priority,
-                    'deadline': issue_obj.deadline.isoformat() if issue_obj.deadline else None,
-                    'date_create': issue_obj.date_create.isoformat() if issue_obj.date_create else None,
-                    'date_check': issue_obj.date_check.isoformat() if issue_obj.date_check else None,
-                    'date_start_plan': issue_obj.date_start_plan.isoformat() if issue_obj.date_start_plan else None,
-                    'date_end_plan': issue_obj.date_end_plan.isoformat() if issue_obj.date_end_plan else None,
-                    'company_id': issue_obj.Companies_id,
-                    'service_id': issue_obj.Services_id,
-                    'database_id': issue_obj.DataBases_id,
-                    'user_id': issue_obj.users_id,
-                    'supervisor_id': issue_obj.supervisor_id,
-                    'applicant_type': issue_obj.applicant_content_type.model if issue_obj.applicant_content_type else None,
-                    'applicant_id': issue_obj.applicant_object_id,
-                    'sprint_id': issue_obj.sprint_id,
-                    'parent_id': issue_obj.parent_id,
-                    'comment': {
-                        'comment_id': instance.pk,
-                        'comment': instance.comment or '',
-                        'user_id': instance.user_id,
-                        'user_name': instance.user.name if instance.user else None,
-                        'date_create': instance.date_create.isoformat() if instance.date_create else None,
-                    }
-                }
-                
-                # Определяем тип события
-                # Проверяем, была ли заявка только что создана (нет старого статуса и заявка создана недавно)
-                from django.utils import timezone
-                from datetime import timedelta
-                
-                is_newly_created = (
-                    old_status is None and 
-                    issue_obj.date_create and 
-                    (timezone.now() - issue_obj.date_create) < timedelta(seconds=5)
-                )
-                
-                if is_newly_created:
-                    event_type = 'created_with_comment'
-                elif old_status and old_status != issue_obj.status:
-                    issue_data['old_status'] = old_status
-                    issue_data['new_status'] = issue_obj.status
-                    event_type = 'status_changed_with_comment'
-                else:
-                    event_type = 'updated_with_comment'
-                
-                KafkaService.send_issue_event(event_type, issue_data, issue_obj.pk)
-                logger.info(f"Sent '{event_type}' event with comment for issue {issue_obj.pk}")
                 return
             
             # Если комментарий создан отдельно, отправляем отдельное сообщение
