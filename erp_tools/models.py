@@ -193,6 +193,7 @@ class ClientTeams(models.Model):
     ]
 
     company = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name='client_teams', verbose_name='Компания')
+    owner = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='client_teams', null=True, blank=True, verbose_name='Проект')
     content = models.TextField(blank=True, null=True, verbose_name='Комментарий')
     email = models.EmailField(blank=True, null=True, verbose_name='Email')
     phone = models.CharField(max_length=50, blank=True, null=True, verbose_name='Телефон')
@@ -276,11 +277,12 @@ class Sprints(models.Model):
 class Issues(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
     content = models.TextField(blank=True, null=True, verbose_name='Содержание')
-    Companies = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Компания')
+    companies = models.ForeignKey(Companies, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Компания')
     date_create = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
-    DataBases = models.ForeignKey(DataBases, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='База данных')
-    Services = models.ForeignKey(Services, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Услуга')
+    databases = models.ForeignKey(DataBases, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='База данных')
+    services = models.ForeignKey(Services, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Услуга')
     users = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Пользователь')
+    owner = models.ForeignKey(Projects, on_delete=models.CASCADE, related_name='issues',null=True,blank=True, verbose_name='Проект')
     # applicant = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='issues_as_applicant', null=True, blank=True, verbose_name='Заявитель (пользователь)')
     # applicant_client = models.ForeignKey(ClientTeams, on_delete=models.SET_NULL, related_name='issues_as_applicant', null=True, blank=True, verbose_name='Заявитель (клиент)')
     applicant_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, limit_choices_to={'model__in': ['users', 'clientteams']}, null=True, blank=True)

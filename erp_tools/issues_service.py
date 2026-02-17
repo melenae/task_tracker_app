@@ -88,19 +88,19 @@ def create_issue_from_1c(issue_data: Dict[str, Any]) -> Optional[Issues]:
     # Поиск связанных объектов по ID
     if issue_data.get('company_id'):
         try:
-            issue.Companies = Companies.objects.get(pk=issue_data['company_id'])
+            issue.companies = Companies.objects.get(pk=issue_data['company_id'])
         except Companies.DoesNotExist:
             logger.warning(f"Company {issue_data['company_id']} not found")
     
     if issue_data.get('service_id'):
         try:
-            issue.Services = Services.objects.get(pk=issue_data['service_id'])
+            issue.services = Services.objects.get(pk=issue_data['service_id'])
         except Services.DoesNotExist:
             logger.warning(f"Service {issue_data['service_id']} not found")
     
     if issue_data.get('database_id'):
         try:
-            issue.DataBases = DataBases.objects.get(pk=issue_data['database_id'])
+            issue.databases = DataBases.objects.get(pk=issue_data['database_id'])
         except DataBases.DoesNotExist:
             logger.warning(f"Database {issue_data['database_id']} not found")
     

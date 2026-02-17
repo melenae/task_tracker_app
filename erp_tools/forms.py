@@ -454,9 +454,7 @@ class IssueForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             self.initial_status = self.instance.status
         else:
-            self.initial_status = None
-
-        # Поля для инициатора (GenericForeignKey)
+            self.initial_status = None        # Поля для инициатора (GenericForeignKey)
         # Поле выбора типа инициатора
         applicant_type_initial = "user"
         applicant_user_initial = None

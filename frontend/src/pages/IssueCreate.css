@@ -1,0 +1,290 @@
+.issue-create {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.issue-create h1 {
+  margin-bottom: 20px;
+  color: #2c3e50;
+  font-size: 1.5rem;
+}
+
+.create-form {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
+/* Основная компоновка: левая и правая колонки */
+.form-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+.form-left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0; /* Предотвращает переполнение */
+}
+
+.form-right-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* Предотвращает переполнение */
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* Секции формы */
+.form-section {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #3498db;
+}
+
+/* Группы информации в правой колонке */
+.info-group {
+  margin-bottom: 15px;
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.info-group-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #34495e;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Группы полей */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+  max-width: 100%;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 50px;
+  max-height: 150px;
+}
+
+.disabled-field {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Строки с несколькими полями */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.form-row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.form-row-4 .form-group {
+  margin-bottom: 0;
+  min-width: 0; /* Предотвращает переполнение */
+}
+
+.form-row-4 .form-group input,
+.form-row-4 .form-group select {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Адаптивность для меньших экранов */
+@media (max-width: 1400px) {
+  .issue-create {
+    max-width: 100%;
+    padding: 15px;
+  }
+  
+  .create-form {
+    padding: 15px;
+  }
+  
+  .form-layout {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .form-row-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .form-layout {
+    gap: 15px;
+  }
+}
+
+@media (max-width: 968px) {
+  .form-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-right-column {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .issue-create {
+    padding: 10px;
+  }
+  
+  .create-form {
+    padding: 15px;
+    max-height: calc(100vh - 100px);
+  }
+  
+  .form-row-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-row,
+  .form-row-2 {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .form-section {
+    padding: 12px;
+  }
+  
+  .info-group {
+    padding: 10px;
+  }
+}
+
+/* Кнопки действий */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #e0e0e0;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 10;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #3498db;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: #95a5a6;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #7f8c8d;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  border: 1px solid #fcc;
+}

@@ -49,6 +49,26 @@ services:
     networks:
       - kafka-network
 
+  # Frontend лучше запускать локально для разработки (npm start)
+  # Раскомментируйте для запуска через Docker (медленнее)
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.dev
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8000
+  #     - CHOKIDAR_USEPOLLING=true
+  #   networks:
+  #     - kafka-network
+  #   stdin_open: true
+  #   tty: true
+
 networks:
   kafka-network:
     driver: bridge

@@ -1042,14 +1042,15 @@ def issues_view(request):
     )
     issues = (
         Issues.objects.select_related(
-            "Companies",
-            "Companies__owner",
-            "DataBases",
-            "Services",
-            "Services__company",
+            "companies",
+            "companies__owner",
+            "databases",
+            "services",
+            "services__company",
             "users",
             "applicant_content_type",
             "supervisor",
+            "owner",
         ).order_by("-date_create")
     )
 
@@ -1059,9 +1060,10 @@ def issues_view(request):
         try:
             selected_project_id = int(selected_project_id)
             issues = issues.filter(
-                Q(Companies__owner_id=selected_project_id)
-                | Q(DataBases__owner_id=selected_project_id)
-                | Q(Services__company__owner_id=selected_project_id)
+                Q(companies__owner_id=selected_project_id)
+                | Q(databases__owner_id=selected_project_id)
+                | Q(services__company__owner_id=selected_project_id)
+                | Q(owner_id=selected_project_id)
             )
         except (ValueError, TypeError):
             selected_project_id = None

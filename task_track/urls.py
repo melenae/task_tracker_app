@@ -17,63 +17,40 @@ Including another URLconf
 from django.contrib import admin
 from django.conf import settings
 import debug_toolbar
-from django.urls import include,path
-
-from erp_tools.views import (
-    account_delete_view,
-    account_update_view,
-    accounts_view,
-    login_view,
-    logout_view,
-    project_companies_view,
-    project_databases_view,
-    project_delete_view,
-    project_team_add_view,
-    project_team_delete_view,
-    project_team_update_view,
-    project_update_view,
-    projects_view,
-    service_desk_companies_view,
-    service_desk_databases_view,
-    services_view,
-    issues_view,
-    company_client_teams_view,
-    issue_detail_view,
-    issue_create_view,
-    issue_update_status_view,
-    refresh_kafka_messages_view,
-    user_delete_view,
-    user_update_view,
-    users_view,
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from erp_tools.api_views import (
+    api_login, api_logout, api_current_user, api_dashboard,
+    UserViewSet, AccountViewSet, ProjectViewSet,
+    IssueViewSet, IssueCommentViewSet, CompanyViewSet,
+    DatabaseViewSet, ServiceViewSet, ProjectTeamViewSet,
+    ClientTeamViewSet
 )
+
+# HTML views удалены - используем только React фронтенд
+
+# API Router
+router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
+router.register(r'accounts', AccountViewSet, basename='account')
+router.register(r'projects', ProjectViewSet, basename='project')
+router.register(r'issues', IssueViewSet, basename='issue')
+router.register(r'comments', IssueCommentViewSet, basename='comment')
+router.register(r'companies', CompanyViewSet, basename='company')
+router.register(r'databases', DatabaseViewSet, basename='database')
+router.register(r'services', ServiceViewSet, basename='service')
+router.register(r'project-teams', ProjectTeamViewSet, basename='project-team')
+router.register(r'client-teams', ClientTeamViewSet, basename='client-team')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
-    path('accounts/', accounts_view, name='accounts'),
-    path('accounts/<int:pk>/update/', account_update_view, name='account-update'),
-    path('accounts/<int:pk>/delete/', account_delete_view, name='account-delete'),
-    path('users/', users_view, name='users'),
-    path('users/<int:pk>/update/', user_update_view, name='user-update'),
-    path('users/<int:pk>/delete/', user_delete_view, name='user-delete'),
-    path('projects/', projects_view, name='projects'),
-    path('projects/<int:pk>/update/', project_update_view, name='project-update'),
-    path('projects/<int:pk>/delete/', project_delete_view, name='project-delete'),
-    path('projects/<int:project_pk>/team/add/', project_team_add_view, name='project-team-add'),
-    path('projects/<int:project_pk>/team/<int:team_pk>/update/', project_team_update_view, name='project-team-update'),
-    path('projects/<int:project_pk>/team/<int:team_pk>/delete/', project_team_delete_view, name='project-team-delete'),
-    path('projects/<int:project_pk>/companies/', project_companies_view, name='project-companies'),
-    path('projects/<int:project_pk>/databases/', project_databases_view, name='project-databases'),
-    path('companies/', service_desk_companies_view, name='companies'),
-    path('databases/', service_desk_databases_view, name='databases'),
-    path('services/', services_view, name='services'),
-    path('issues/', issues_view, name='issues'),
-    path('issues/create/', issue_create_view, name='issue-create'),
-    path('issues/<int:pk>/', issue_detail_view, name='issue-detail'),
-    path('issues/refresh-kafka/', refresh_kafka_messages_view, name='refresh-kafka-messages'),
-    path('companies/<int:company_pk>/client-teams/', company_client_teams_view, name='company-client-teams'),
-    path('issues/<int:pk>/update-status/', issue_update_status_view, name='issue-update-status'),
+    # API endpoints (CSRF exempt применен в api_views.py)
+    path('api/login/', api_login, name='api-login'),
+    path('api/logout/', api_logout, name='api-logout'),
+    path('api/current-user/', api_current_user, name='api-current-user'),
+    path('api/dashboard/', api_dashboard, name='api-dashboard'),
+    path('api/', include(router.urls)),
+    # HTML views удалены - используем только React фронтенд
 ]
 
 if settings.DEBUG:
